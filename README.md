@@ -53,6 +53,12 @@ res = MalwrAPI({'verbose': True}).get_latest_comments()
 print res 
 ```
 
+Improvements
+=======
+
+So far, the API is pretty basic and submit files anonymously (not linked to your account). 
+Next steps are: authentication on malwr.com, add search feature but also retrieve information about a specific sample. 
+
 
 Contributing
 =======
