@@ -107,6 +107,7 @@ class MalwrAPI(object):
             'math_captcha_question': soup.find('input', {'name': 'math_captcha_question'})['value'],
             'csrfmiddlewaretoken': soup.find('input', {'name': 'csrfmiddlewaretoken'})['value'],
             'share': 'on', # share by default
+            'analyze': 'on', # analyze by default
         }
 
         req = s.post(url + '/submission/', data=data, files={'sample': open(filepath, 'rb')})
