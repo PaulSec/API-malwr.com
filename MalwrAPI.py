@@ -41,7 +41,7 @@ class MalwrAPI(object):
     def get_latest_comments(self):
         res = []
         req = requests.get(url)
-        soup = BeautifulSoup(req.content, "html5lib")
+        soup = BeautifulSoup(req.content, "html.parser")
 
         comments = soup.findAll('div', {'class': 'span6'})[3]
         for comment in comments.findAll('tr'):
@@ -56,7 +56,7 @@ class MalwrAPI(object):
     def get_recent_domains(self):
         res = []
         req = requests.get(url)
-        soup = BeautifulSoup(req.content, "html5lib")
+        soup = BeautifulSoup(req.content, "html.parser")
 
         domains = soup.findAll('div', {'class': 'span6'})[1]
         for domain in domains.findAll('tr'):
@@ -71,7 +71,7 @@ class MalwrAPI(object):
     def get_public_tags(self):
         res = []
         req = requests.get(url)
-        soup = BeautifulSoup(req.content, "html5lib")
+        soup = BeautifulSoup(req.content, "html.parser")
 
         tags = soup.findAll('div', {'class': 'span6'})[2]
         for tag in tags.findAll('a', {'class': 'tag-label'}):
@@ -81,7 +81,7 @@ class MalwrAPI(object):
     def get_recent_analyses(self):
         res = []
         req = requests.get(url)
-        soup = BeautifulSoup(req.content, "html5lib")
+        soup = BeautifulSoup(req.content, "html.parser")
 
         submissions = soup.findAll('div', {'class': 'span6'})[0]
         for submission in submissions.findAll('tr'):
@@ -98,7 +98,7 @@ class MalwrAPI(object):
         s = requests.session()
         req = s.get(url + '/submission/')
         
-        soup = BeautifulSoup(req.content, "html5lib")
+        soup = BeautifulSoup(req.content, "html.parser")
         math_captcha_question = soup.find('input', {'name': 'math_captcha_question'})['value']
 
         pattern = '(\d [-+*] \d) ='
@@ -111,7 +111,7 @@ class MalwrAPI(object):
         }
 
         req = s.post(url + '/submission/', data=data, files={'sample': open(filepath, 'rb')})
-        soup = BeautifulSoup(req.content, "html5lib")
+        soup = BeautifulSoup(req.content, "html.parser")
 
         # regex to check if the file was already submitted before
         pattern = '(\/analysis\/[a-zA-Z0-9]{12,}\/)'
