@@ -53,6 +53,14 @@ res = MalwrAPI({'verbose': True}).get_latest_comments()
 print res 
 ```
 
+Get search results
+=======
+
+```python
+res = MalwrAPI({'verbose': True}).search("LOGIN_TO_MALWR.COM","PASSWORD_TO_MALWR.COM","STRING_TO_SEARCH")
+print res 
+```
+
 Improvements
 =======
 
