@@ -133,3 +133,33 @@ class MalwrAPI(object):
                 self.display_message('Error with the file %s' % filepath)
                 return None
         return res
+
+    def search(self,login,password,search_word):
+        res = []
+        s = requests.Session()
+        req = s.get("https://malwr.com/account/login/")
+        soup = BeautifulSoup(req.content)
+        csrf_input = soup.find(attrs = dict(name = 'csrfmiddlewaretoken'))
+        csrf_token = csrf_input['value']
+        payload = {'csrfmiddlewaretoken': csrf_token, 'username' : u'{0}'.format(login), 'password': u'{0}'.format(password)}
+        logged = s.post("https://malwr.com/account/login/",data=payload,headers=dict(Referer="https://malwr.com/account/login/"))
+        l=""
+        cnt = s.get("https://malwr.com/analysis/search/",data=l,headers=dict(Referer="https://malwr.com/account/login/"))
+        c = BeautifulSoup(cnt.content)
+        csrf_input = c.find(attrs = dict(name = 'csrfmiddlewaretoken'))
+        csrf_token = csrf_input['value']
+        payload = {'csrfmiddlewaretoken': csrf_token, 'search':u'{}'.format(search_word)}
+        sc = s.post("https://malwr.com/analysis/search/",data=payload,headers=dict(Referer="https://malwr.com/analysis/search"))
+        ssc = BeautifulSoup(sc.content)
+        res=[]
+        submissions = ssc.findAll('div', {'class': 'box-content'})[0]
+        sub = submissions.findAll('tbody')[0]
+        for submission in sub.findAll('tr'):
+            infos = submission.findAll('td')
+            infos_to_add = {}
+            infos_to_add['submission_time'] = infos[0].string
+            infos_to_add['hash'] = infos[1].find('a').string
+            infos_to_add['submission_url'] = infos[1].find('a')['href']
+            infos_to_add['file_name'] = infos[2].string
+            res.append(infos_to_add)
+        return res

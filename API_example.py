@@ -14,3 +14,6 @@ print res
 
 res = MalwrAPI({'verbose': True}).submit_sample('/tmp/test.txt')
 print res
+
+res=MalwrAPI({'verbose': True}).search(LOGIN_MALWR,PASSWORD_MALWR,WORD_TO_SEARCH)
+print res
