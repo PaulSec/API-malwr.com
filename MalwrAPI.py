@@ -10,37 +10,44 @@ from bs4 import BeautifulSoup
 import hashlib
 
 url = "https://malwr.com"
+headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0'
+}
 
 class MalwrAPI(object):
 
     """
         MalwrAPI Main Handler
     """
+    session = None
+    logged = False
+    verbose = False
 
-    _instance = None
-    _verbose = False
-
-    def __init__(self, arg=None):
-        pass
-
-    def __new__(cls, *args, **kwargs):
-        """
-            __new__ builtin
-        """
-        if not cls._instance:
-            cls._instance = super(MalwrAPI, cls).__new__(
-                cls, *args, **kwargs)
-            if (args and args[0] and args[0]['verbose']):
-                cls._verbose = True
-        return cls._instance
+    def __init__(self, verbose=False, username=None, password=None):
+        self.verbose = verbose
+        # Authenticate and store the session
+        self.session = requests.session()
+        if (username and password):
+            s = self.session
+            req = s.get("https://malwr.com/account/login/", headers=headers)
+            soup = BeautifulSoup(req.content)
+            csrf_input = soup.find(attrs = dict(name = 'csrfmiddlewaretoken'))
+            csrf_token = csrf_input['value']
+            payload = {'csrfmiddlewaretoken': csrf_token, 'username' : u'{0}'.format(username), 'password': u'{0}'.format(password)}
+            login_request = s.post("https://malwr.com/account/login/",data=payload,headers=headers)
+            if (login_request.status_code == 200):
+                self.logged = True
+            else:
+                self.logged = False
+                print "Not being able to log you"
 
     def display_message(self, s):
-        if (self._verbose):
+        if (self.verbose):
             print '[verbose] %s' % s
 
     def get_latest_comments(self):
         res = []
-        req = requests.get(url)
+        req = self.session.get(url, headers=headers)
         soup = BeautifulSoup(req.content, "html.parser")
 
         comments = soup.findAll('div', {'class': 'span6'})[3]
@@ -55,7 +62,7 @@ class MalwrAPI(object):
 
     def get_recent_domains(self):
         res = []
-        req = requests.get(url)
+        req = self.session.get(url, headers=headers)
         soup = BeautifulSoup(req.content, "html.parser")
 
         domains = soup.findAll('div', {'class': 'span6'})[1]
@@ -70,7 +77,7 @@ class MalwrAPI(object):
 
     def get_public_tags(self):
         res = []
-        req = requests.get(url)
+        req = self.session.get(url, headers=headers)
         soup = BeautifulSoup(req.content, "html.parser")
 
         tags = soup.findAll('div', {'class': 'span6'})[2]
@@ -80,7 +87,7 @@ class MalwrAPI(object):
 
     def get_recent_analyses(self):
         res = []
-        req = requests.get(url)
+        req = self.session.get(url, headers=headers)
         soup = BeautifulSoup(req.content, "html.parser")
 
         submissions = soup.findAll('div', {'class': 'span6'})[0]
@@ -94,9 +101,9 @@ class MalwrAPI(object):
             res.append(infos_to_add)
         return res
 
-    def submit_sample(self, filepath):
-        s = requests.session()
-        req = s.get(url + '/submission/')
+    def submit_sample(self, filepath, analyze=True, share=True, private=True):
+        s = self.session
+        req = s.get(url + '/submission/', headers=headers)
         
         soup = BeautifulSoup(req.content, "html.parser")
         math_captcha_question = soup.find('input', {'name': 'math_captcha_question'})['value']
@@ -106,11 +113,12 @@ class MalwrAPI(object):
             'math_captcha_field': eval(re.findall(pattern, req.content)[0]),
             'math_captcha_question': soup.find('input', {'name': 'math_captcha_question'})['value'],
             'csrfmiddlewaretoken': soup.find('input', {'name': 'csrfmiddlewaretoken'})['value'],
-            'share': 'on', # share by default
-            'analyze': 'on', # analyze by default
+            'share': 'on' if share else 'off', # share by default
+            'analyze': 'on' if analyze else 'off', # analyze by default
+            'private': 'on' if private else 'off' # private by default
         }
 
-        req = s.post(url + '/submission/', data=data, files={'sample': open(filepath, 'rb')})
+        req = s.post(url + '/submission/', data=data, headers=headers, files={'sample': open(filepath, 'rb')})
         soup = BeautifulSoup(req.content, "html.parser")
 
         # regex to check if the file was already submitted before
@@ -129,37 +137,35 @@ class MalwrAPI(object):
             submission_status = re.findall(pattern, req.content)
             if (len(submission_status) > 0):
                 res['analysis_link'] = submission_status[0]
+            elif ('file like this waiting for processing, submission aborted.' in req.content):
+                self.display_message('File already submitted, check on the site')
+                return None
             else:
                 self.display_message('Error with the file %s' % filepath)
                 return None
         return res
 
-    def search(self,login,password,search_word):
+    def search(self, search_word):
         res = []
-        s = requests.Session()
-        req = s.get("https://malwr.com/account/login/")
-        soup = BeautifulSoup(req.content)
-        csrf_input = soup.find(attrs = dict(name = 'csrfmiddlewaretoken'))
-        csrf_token = csrf_input['value']
-        payload = {'csrfmiddlewaretoken': csrf_token, 'username' : u'{0}'.format(login), 'password': u'{0}'.format(password)}
-        logged = s.post("https://malwr.com/account/login/",data=payload,headers=dict(Referer="https://malwr.com/account/login/"))
-        l=""
-        cnt = s.get("https://malwr.com/analysis/search/",data=l,headers=dict(Referer="https://malwr.com/account/login/"))
-        c = BeautifulSoup(cnt.content)
-        csrf_input = c.find(attrs = dict(name = 'csrfmiddlewaretoken'))
-        csrf_token = csrf_input['value']
-        payload = {'csrfmiddlewaretoken': csrf_token, 'search':u'{}'.format(search_word)}
-        sc = s.post("https://malwr.com/analysis/search/",data=payload,headers=dict(Referer="https://malwr.com/analysis/search"))
-        ssc = BeautifulSoup(sc.content)
-        res=[]
-        submissions = ssc.findAll('div', {'class': 'box-content'})[0]
-        sub = submissions.findAll('tbody')[0]
-        for submission in sub.findAll('tr'):
-            infos = submission.findAll('td')
-            infos_to_add = {}
-            infos_to_add['submission_time'] = infos[0].string
-            infos_to_add['hash'] = infos[1].find('a').string
-            infos_to_add['submission_url'] = infos[1].find('a')['href']
-            infos_to_add['file_name'] = infos[2].string
-            res.append(infos_to_add)
+        if (self.logged):
+            s = self.session
+            search_url = url + '/analysis/search/'
+            cnt = s.get(search_url,data="",headers=headers)
+            c = BeautifulSoup(cnt.content)
+            csrf_input = c.find(attrs = dict(name = 'csrfmiddlewaretoken'))
+            csrf_token = csrf_input['value']
+            payload = {'csrfmiddlewaretoken': csrf_token, 'search':u'{}'.format(search_word)}
+            sc = s.post(search_url,data=payload,headers=headers)
+            ssc = BeautifulSoup(sc.content)
+            res=[]
+            submissions = ssc.findAll('div', {'class': 'box-content'})[0]
+            sub = submissions.findAll('tbody')[0]
+            for submission in sub.findAll('tr'):
+                infos = submission.findAll('td')
+                infos_to_add = {}
+                infos_to_add['submission_time'] = infos[0].string
+                infos_to_add['hash'] = infos[1].find('a').string
+                infos_to_add['submission_url'] = infos[1].find('a')['href']
+                infos_to_add['file_name'] = infos[2].string
+                res.append(infos_to_add)
         return res
