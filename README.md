@@ -5,6 +5,8 @@ Python API for malwr.com
 Usage 
 ========
 
+You can check ```API_example.py``` for advanced usage.
+
 Import the class: 
 
 ```python
@@ -17,7 +19,7 @@ Submit a sample
 =======
 
 ```python
-res = MalwrAPI({'verbose': True}).submit_sample('/tmp/test.txt')
+res = MalwrAPI(True).submit_sample('/tmp/test.txt')
 print res
 ```
 
@@ -25,7 +27,7 @@ Get recent domains
 =======
 
 ```python
-res = MalwrAPI({'verbose': True}).get_recent_domains()
+res = MalwrAPI(True).get_recent_domains()
 print res 
 ```
 
@@ -33,7 +35,7 @@ Get public tags
 =======
 
 ```python
-res = MalwrAPI({'verbose': True}).get_public_tags()
+res = MalwrAPI(True).get_public_tags()
 print res 
 ```
 
@@ -41,7 +43,7 @@ Get recent analyses
 =======
 
 ```python
-res = MalwrAPI({'verbose': True}).get_recent_analyses()
+res = MalwrAPI(True).get_recent_analyses()
 print res 
 ```
 
@@ -49,7 +51,7 @@ Get latest comments
 =======
 
 ```python
-res = MalwrAPI({'verbose': True}).get_latest_comments()
+res = MalwrAPI(True).get_latest_comments()
 print res 
 ```
 
@@ -57,7 +59,7 @@ Get search results
 =======
 
 ```python
-res = MalwrAPI({'verbose': True}).search("LOGIN_TO_MALWR.COM","PASSWORD_TO_MALWR.COM","STRING_TO_SEARCH")
+res = MalwrAPI(True, "LOGIN_TO_MALWR.COM","PASSWORD_TO_MALWR.COM").search("STRING_TO_SEARCH")
 print res 
 ```
 
