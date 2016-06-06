@@ -29,7 +29,16 @@ if __name__ == "__main__":
             '-r', '--recent', help='List recent analyses',
             action="store_true"
     )
+    parser.add_argument(
+            '-p', '--private', help='Submit file as private',
+            action="store_true"
+    )
+    parser.add_argument(
+            '-n', '--no-share', help='Do not shared the submitted file',
+            action="store_false"
+    )
     args = parser.parse_args()
+    print(args)
 
     # Read the config file
     authentication = None
@@ -72,7 +81,10 @@ if __name__ == "__main__":
                         )
                     )
     elif args.submit is not None:
-        res = api.submit_sample(filepath=args.submit)
+        res = api.submit_sample(
+                filepath=args.submit, share=args.no_share,
+                private=args.private
+        )
         print('File submitted : https://malwr.com%s for %s (hash: %s)' % (res['analysis_link'], res['file'], res['md5']))
     elif args.domains:
         res = api.get_recent_domains()
