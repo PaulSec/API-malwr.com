@@ -38,7 +38,6 @@ if __name__ == "__main__":
             action="store_false"
     )
     args = parser.parse_args()
-    print(args)
 
     # Read the config file
     authentication = None
