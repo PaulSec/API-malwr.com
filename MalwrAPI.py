@@ -18,55 +18,56 @@ class MalwrAPI(object):
     session = None
     logged = False
     verbose = False
-
     url = "https://malwr.com"
     headers = {
         'User-Agent': "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) " +
                       "Gecko/20100101 Firefox/41.0"
     }
 
-    def __init__(self, verbose=False, username=None, password=None):
-
+    def __init__(self, verbose=False, username=None, password=None, apikey=None):
         self.verbose = verbose
         self.session = requests.session()
+        self.username = username
+        self.password = password
+        self.apikey = apikey
 
-        # Authenticate and store the session
-        if username and password:
-
+    def login(self):
+        """Login on malwr.com website"""
+        if self.username and self.password:
             soup = self.request_to_soup(self.url + '/account/login')
             csrf_input = soup.find(attrs=dict(name='csrfmiddlewaretoken'))
             csrf_token = csrf_input['value']
             payload = {
                 'csrfmiddlewaretoken': csrf_token,
-                'username': u'{0}'.format(username),
-                'password': u'{0}'.format(password)
+                'username': u'{0}'.format(self.username),
+                'password': u'{0}'.format(self.password)
             }
-            login_request = self.session.post("https://malwr.com/account/login/",
+            login_request = self.session.post(self.url + "/account/login/",
                                               data=payload, headers=self.headers)
 
             if login_request.status_code == 200:
                 self.logged = True
+                return True
             else:
                 self.logged = False
-                print "Not being able to log you"
+                return False
 
     def request_to_soup(self, url=None):
-
+        """Request url and return the Beautifoul Soup object of html returned"""
         if not url:
             url = self.url
 
         req = self.session.get(url, headers=self.headers)
         soup = BeautifulSoup(req.content, "html.parser")
-
         return soup
 
     def display_message(self, s):
-
+        """Display the message"""
         if self.verbose:
-            print '[verbose] %s' % s
+            print('[verbose] %s' % s)
 
     def get_latest_comments(self):
-
+        """Request the last comments on malwr.com"""
         res = []
         soup = self.request_to_soup()
         comments = soup.findAll('div', {'class': 'span6'})[3]
@@ -83,14 +84,14 @@ class MalwrAPI(object):
         return res
 
     def get_recent_domains(self):
-
+        """Get recent domains on index page
+        Returns a list of objects with keys domain_name and url_analysis"""
         res = []
         soup = self.request_to_soup()
 
         domains = soup.findAll('div', {'class': 'span6'})[1]
         for domain in domains.findAll('tr'):
             infos = domain.findAll('td')
-
             infos_to_add = {
                 'domain_name': infos[0].find('span').string,
                 'url_analysis': infos[1].find('a')['href']
@@ -100,7 +101,8 @@ class MalwrAPI(object):
         return res
 
     def get_public_tags(self):
-
+        """Get public tags on index page
+        Return a tag list"""
         res = []
         soup = self.request_to_soup()
 
@@ -129,6 +131,8 @@ class MalwrAPI(object):
         return res
 
     def submit_sample(self, filepath, analyze=True, share=True, private=True):
+        if self.logged is False:
+            self.login()
 
         s = self.session
         req = s.get(self.url + '/submission/', headers=self.headers)
@@ -184,10 +188,11 @@ class MalwrAPI(object):
         return res
 
     def search(self, search_word):
-
         # Do nothing if not logged in
         if not self.logged:
-            return []
+            res = self.login()
+            if res is False:
+                return False
 
         search_url = self.url + '/analysis/search/'
         c = self.request_to_soup(search_url)
@@ -202,6 +207,10 @@ class MalwrAPI(object):
         ssc = BeautifulSoup(sc.content, "html.parser")
 
         res = []
+        error = ssc.findAll('div', {'class': 'alert-error'})
+        if len(error) > 0:
+            self.display_message('Invalid search term')
+            return []
         submissions = ssc.findAll('div', {'class': 'box-content'})[0]
         sub = submissions.findAll('tbody')[0]
         for submission in sub.findAll('tr'):
