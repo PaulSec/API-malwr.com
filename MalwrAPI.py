@@ -224,3 +224,38 @@ class MalwrAPI(object):
             res.append(infos_to_add)
 
         return res
+
+    def getReport(self, search_url):
+        # Do nothing if not logged in
+        if not self.logged:
+            res = self.login()
+            if res is False:
+                return False
+
+        search_url = self.url + search_url
+        c = self.request_to_soup(search_url)
+
+        csrf_input = c.find(attrs=dict(name='csrfmiddlewaretoken'))
+        csrf_token = csrf_input['value']
+        payload = {
+            'csrfmiddlewaretoken': csrf_token,
+        }
+        sc = self.session.post(search_url, data=payload, headers=self.headers)
+        ssc = BeautifulSoup(sc.content, "html.parser")
+        
+        output = {"IP": [], "Domain": []}
+       
+        domains = ssc.find(id="domains").find_all("td")
+        # Will go domain, IP, domain, IP
+        for i in range(len(domains)):
+            if i%2 == 0:
+                # Domain
+                output["Domain"].append(domains[i].text)
+            else:
+                # IP 
+                output["IP"].append(domains[i].text)
+    
+        ips = ssc.find(id="hosts").find_all("td")
+        output["IP"] += [x.text for x in ips]
+        
+        return output
