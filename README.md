@@ -23,6 +23,14 @@ res = MalwrAPI(True).submit_sample('/tmp/test.txt')
 print res
 ```
 
+Submit an entire folder
+=======
+
+```python
+res = api_unauthenticated.submit_folder('/tmp/malware/')
+print res
+```
+
 Get recent domains
 =======
 
