@@ -22,6 +22,9 @@ print res
 res = api_unauthenticated.submit_sample('/tmp/test.txt')
 print res
 
+res = api_unauthenticated.submit_folder('/tmp/malware/')
+print res
+
 # Use the API the authenticated way
 api_authenticated = MalwrAPI(verbose=True, username='username', password='password')
 

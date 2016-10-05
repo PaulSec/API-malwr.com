@@ -8,6 +8,7 @@ import hashlib
 
 import re
 import requests
+import os
 from bs4 import BeautifulSoup
 
 
@@ -128,6 +129,13 @@ class MalwrAPI(object):
             }
             res.append(infos_to_add)
 
+        return res
+
+    def submit_folder(self, path, analyze=True, share=True, private=True):
+        filelist = [f for f in os.listdir(path)]
+        res = []
+        for item in filelist:
+            res.append(self.submit_sample(path + item, analyze, share, private))
         return res
 
     def submit_sample(self, filepath, analyze=True, share=True, private=True):
