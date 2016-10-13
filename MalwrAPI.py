@@ -59,7 +59,8 @@ class MalwrAPI(object):
             url = self.url
 
         req = self.session.get(url, headers=self.headers)
-        soup = BeautifulSoup(req.content, "html.parser")
+        content = str(req.content)
+        soup = BeautifulSoup(content, "html.parser")
         return soup
 
     def display_message(self, s):
@@ -145,14 +146,15 @@ class MalwrAPI(object):
         s = self.session
         req = s.get(self.url + '/submission/', headers=self.headers)
 
-        soup = BeautifulSoup(req.content, "html.parser")
+        content = str(req.content)
+        soup = BeautifulSoup(content, "html.parser")
 
         # TODO: math_captcha_question might be unused. Remove.
         # math_captcha_question = soup.find('input', {'name': 'math_captcha_question'})['value']
 
         pattern = '(\d [-+*] \d) ='
         data = {
-            'math_captcha_field': eval(re.findall(pattern, req.content)[0]),
+            'math_captcha_field': eval(re.findall(pattern, content)[0]),
             'math_captcha_question': soup.find('input', {'name': 'math_captcha_question'})['value'],
             'csrfmiddlewaretoken': soup.find('input', {'name': 'csrfmiddlewaretoken'})['value'],
             'share': 'on' if share else 'off',  # share by default
@@ -168,7 +170,7 @@ class MalwrAPI(object):
 
         # regex to check if the file was already submitted before
         pattern = '(\/analysis\/[a-zA-Z0-9]{12,}\/)'
-        submission_links = re.findall(pattern, req.content)
+        submission_links = re.findall(pattern, content)
 
         res = {
             'md5': hashlib.md5(open(filepath, 'rb').read()).hexdigest(),
@@ -180,11 +182,11 @@ class MalwrAPI(object):
             res['analysis_link'] = submission_links[0]
         else:
             pattern = '(\/submission\/status\/[a-zA-Z0-9]{12,}\/)'
-            submission_status = re.findall(pattern, req.content)
+            submission_status = re.findall(pattern, content)
 
             if len(submission_status) > 0:
                 res['analysis_link'] = submission_status[0]
-            elif 'file like this waiting for processing, submission aborted.' in req.content:
+            elif 'file like this waiting for processing, submission aborted.' in content:
                 self.display_message('File already submitted, check on the site')
 
                 return None
